@@ -4,9 +4,9 @@ const options = { year: 'numeric', month: 'numeric', day: 'numeric' };
 
 function setClock() {
   const date = new Date();
-  timeElement.innerHTML = `Czas: ${
-    date.toTimeString().split(' ')[0]
-  } ${date.toLocaleDateString('pl-PL', options)}`;
+  if (timeElement) {
+    timeElement.innerHTML = `Czas: ${date.toTimeString().split(' ')[0]} ${date.toLocaleDateString('pl-PL', options)}`;
+  }
 }
 
 setClock();
@@ -21,69 +21,71 @@ let webManifest = {
 };
 
 function getMobileOperatingSystem() {
-  var userAgent = navigator.userAgent || window.opera;
-
-  if (/windows phone/i.test(userAgent)) return 1;
-  if (/android/i.test(userAgent)) return 2;
-  if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) return 3;
+  const userAgent = navigator.userAgent.toLowerCase();
+  if (userAgent.includes('windows phone')) return 1;
+  if (userAgent.includes('android')) return 2;
+  if (/ipad|iphone|ipod/.test(userAgent) && !window.MSStream) return 3;
   return 4;
 }
 
-if (getMobileOperatingSystem() == 2) {
-  document.querySelector('.bottom_bar').style.height = '70px';
+if (getMobileOperatingSystem() === 2) {
+  const bottomBar = document.querySelector('.bottom_bar');
+  if (bottomBar) bottomBar.style.height = '70px';
 }
 
 const manifestLink = document.createElement('link');
 manifestLink.rel = 'manifest';
-manifestLink.href = `data:application/manifest+json;base64,${btoa(
-  JSON.stringify(webManifest)
-)}`;
+manifestLink.href = `data:application/manifest+json;base64,${btoa(JSON.stringify(webManifest))}`;
 document.head.prepend(manifestLink);
 
 const unfoldElement = document.querySelector('.info_holder');
-unfoldElement.addEventListener('click', () => {
-  unfoldElement.classList.toggle('unfolded');
-});
+if (unfoldElement) {
+  unfoldElement.addEventListener('click', () => {
+    unfoldElement.classList.toggle('unfolded');
+  });
+}
 
 const imageParam = params.get('image');
 if (imageParam) {
-  document.querySelector(
-    '.id_own_image'
-  ).style.backgroundImage = `url(${imageParam})`;
+  const idImage = document.querySelector('.id_own_image');
+  if (idImage) idImage.style.backgroundImage = `url(${imageParam})`;
 }
 
-const birthday = params.get('birthday');
-const sex = params.get('sex');
 const setData = (id, value) => {
   const element = document.getElementById(id);
-  if (element) element.innerHTML = value || '';
+  if (element && value) element.innerHTML = value;
 };
 
-setData('name', params.get('name').toUpperCase());
-setData('surname', params.get('surname').toUpperCase());
-setData('nationality', params.get('nationality').toUpperCase());
-setData('birthday', birthday);
+setData('name', params.get('name')?.toUpperCase());
+setData('surname', params.get('surname')?.toUpperCase());
+setData('nationality', params.get('nationality')?.toUpperCase());
+setData('birthday', params.get('birthday'));
 setData('familyName', params.get('familyName'));
-setData('sex', sex);
+setData('sex', params.get('sex'));
 setData('fathersFamilyName', params.get('fathersFamilyName'));
 setData('mothersFamilyName', params.get('mothersFamilyName'));
 setData('birthPlace', params.get('birthPlace'));
 setData('countryOfBirth', params.get('countryOfBirth'));
-setData(
-  'adress',
-  `ul. ${params.get('adress1') || ''}<br>${params.get('adress2') || ''} ${
-    params.get('city') || ''
-  }`
-);
+
+const address = [
+  params.get('adress1') ? `ul. ${params.get('adress1')}` : '',
+  params.get('adress2'),
+  params.get('city'),
+].filter(Boolean).join('<br>');
+
+setData('adress', address);
 setData('checkInDate', params.get('checkInDate'));
 
-if (birthday) {
-  const [day, month, year] = birthday.split('.').map((v) => parseInt(v, 10));
-  const adjustedMonth = year >= 2000 ? 20 + month : month;
+const birthday = params.get('birthday');
+const sex = params.get('sex');
 
-  const peselSuffix = sex?.toLowerCase() === 'mężczyzna' ? '0295' : '0382';
-  const pesel = `${year % 100}${adjustedMonth.toString().padStart(2, '0')}${day
-    .toString()
-    .padStart(2, '0')}${peselSuffix}7`;
-  setData('pesel', pesel);
+if (birthday) {
+  const birthdayParts = birthday.split('.').map(Number);
+  if (birthdayParts.length === 3) {
+    const [day, month, year] = birthdayParts;
+    const adjustedMonth = year >= 2000 ? 20 + month : month;
+    const peselSuffix = sex?.toLowerCase() === 'mężczyzna' ? '0295' : '0382';
+    const pesel = `${year % 100}${String(adjustedMonth).padStart(2, '0')}${String(day).padStart(2, '0')}${peselSuffix}7`;
+    setData('pesel', pesel);
+  }
 }
